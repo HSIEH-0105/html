@@ -1,0 +1,83 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+import time
+
+# 設定 WebDriver 路徑
+webdriver_path = r"C:\Users\user\OneDrive\桌面\python\chromedriver.exe"
+
+# 初始化 WebDriver
+options = Options()
+# 開啟無頭模式（如果需要）
+# options.add_argument("--headless")
+options.add_argument("--enable-logging")
+options.add_argument("--v=1")
+service = Service(webdriver_path)
+driver = webdriver.Chrome(service=service, options=options)
+
+# 打開目標網站
+driver.get('https://webap.nkust.edu.tw/nkust/ag_pro/ag202.jsp')
+
+# 顯式等待直到元素可見
+def wait_for_element(locator, timeout=30):
+    try:
+        return WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located(locator)
+        )
+    except Exception as e:
+        print(f"Error waiting for element with locator {locator}. Error: {e}")
+        return None
+
+# 定義一個函數來選擇下拉選單
+def select_dropdown(locator, value):
+    try:
+        # 每次操作之前，重新獲取元素
+        dropdown_element = wait_for_element(locator)
+        if dropdown_element:
+            select = Select(dropdown_element)
+            select.select_by_visible_text(value)
+            print(f"Successfully selected: {value}")
+        else:
+            print(f"Dropdown element with locator {locator} not found.")
+    except Exception as e:
+        print(f"Error selecting value {value} from dropdown. Error: {e}")
+
+# 自動選擇「課校區」
+try:
+    print("Starting the script...")
+
+    # 定位並選擇 "國立高雄科技大學(第一校區)"
+    select_dropdown((By.ID, 'cmp_area_id'), '國立高雄科技大學(第一校區)')
+
+    # 定位並選擇 "日間部四技"
+    select_dropdown((By.ID, 'dgr_id'), '日間部四技')
+
+    # 定位並選擇 "(管理學院)資訊管理系"
+    select_dropdown((By.ID, 'unt_id'), '(管理學院)資訊管理系')
+
+    # 等待「條件查詢」按鈕可點擊
+    search_button_locator = (By.CLASS_NAME, 'button')  # 修正為正確的按鈕定位
+
+    # 使用顯式等待來確保按鈕已加載並可點擊
+    search_button = wait_for_element(search_button_locator)
+
+    if search_button:
+        # 點擊查詢按鈕
+        search_button.click()
+        print("Clicked the search button.")
+    else:
+        print("Search button not found.")
+
+    # 等待查詢結果或其他操作，視情況而定
+    time.sleep(15)  # 等待頁面載入或查詢結果
+
+except Exception as e:
+    print(f"An error occurred during the script execution: {e}")
+finally:
+    # 關閉瀏覽器
+    driver.quit()
+    print("Browser closed.")
